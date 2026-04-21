@@ -75,6 +75,27 @@ export const list = asyncHandler(async (req, res) => {
   });
 });
 
+// GET /api/client/archived
+export const listArchived = asyncHandler(async (req, res) => {
+  const clients = await Client.find({ company: req.user.companyId, deleted: true })
+    .setOptions({ includeDeleted: true })
+    .sort('-updatedAt');
+
+  res.json({ data: clients, total: clients.length });
+});
+
+// PATCH /api/client/:id/restore
+export const restore = asyncHandler(async (req, res) => {
+  const client = await Client.findOneAndUpdate(
+    { _id: req.params.id, company: req.user.companyId, deleted: true },
+    { deleted: false },
+    { new: true }
+  ).setOptions({ includeDeleted: true });
+
+  if (!client) throw AppError.notFound('Cliente archivado no encontrado');
+  res.json({ client });
+});
+
 // DELETE /api/client/:id   (?soft=true → borrado lógico)
 export const remove = asyncHandler(async (req, res) => {
   const soft = req.query.soft === 'true';
