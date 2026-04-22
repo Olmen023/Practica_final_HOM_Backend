@@ -5,6 +5,7 @@ import Company from '../models/Company.js';
 import config from '../config/index.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { sendVerificationEmail } from '../services/mail.service.js';
 
 /** Genera un código de verificación de 6 dígitos */
 const generateCode = () =>
@@ -49,8 +50,10 @@ export const register = asyncHandler(async (req, res) => {
 
   await User.findByIdAndUpdate(user._id, { refreshToken });
 
-  // En el futuro commit se enviará el código por email via mail.service.js
-  console.log(`[DEV] Código de verificación para ${email}: ${code}`);
+  // Enviar código por email (no bloqueamos la respuesta si falla)
+  sendVerificationEmail(email, code).catch((err) =>
+    console.error('[Mail] Error al enviar verificación:', err.message)
+  );
 
   res.status(201).json({
     user:   { email: user.email, status: user.status, role: user.role },

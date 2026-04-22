@@ -1,4 +1,5 @@
 import { AppError } from '../utils/AppError.js';
+import { notifySlack } from '../services/logger.service.js';
 
 /** Captura rutas no encontradas y las convierte en AppError 404 */
 export const notFound = (req, res, next) =>
@@ -9,7 +10,7 @@ export const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode ?? 500;
   const isOperational = err.isOperational ?? false;
 
-  // Errores no operacionales (bugs reales) — log completo
+  // Errores no operacionales (bugs reales) — log completo + notificación Slack
   if (statusCode >= 500) {
     console.error('[ERROR 5XX]', {
       message: err.message,
@@ -17,7 +18,8 @@ export const errorHandler = (err, req, res, next) => {
       path: req.originalUrl,
       method: req.method,
     });
-    // En commits futuros aquí se llamará a logger.notifySlack(err, req)
+    // Notificación asíncrona — no bloqueamos la respuesta si el webhook falla
+    notifySlack(err, req).catch(() => {});
   }
 
   res.status(statusCode).json({
