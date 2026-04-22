@@ -35,10 +35,7 @@ export const initSocketIO = (httpServer) => {
 };
 
 /**
- * Devuelve la instancia de Socket.IO previamente inicializada.
- * Lanza error si se llama antes de initSocketIO.
+ * Devuelve la instancia de Socket.IO previamente inicializada,
+ * o null si todavía no se ha llamado a initSocketIO (p.ej. en tests).
  */
-export const getIO = () => {
-  if (!io) throw new Error('Socket.IO no ha sido inicializado. Llama a initSocketIO primero.');
-  return io;
-};
+export const getIO = () => io ?? null;

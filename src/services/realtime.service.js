@@ -15,6 +15,7 @@ import { getIO } from '../sockets/index.js';
  */
 const emitToCompany = (companyId, event, payload) => {
   const io = getIO();
+  if (!io) return; // Socket.IO no inicializado (entorno de tests) — noop
   io.emit(event, payload); // 🐛 BUG 5: debería ser io.to(`company:${companyId}`).emit(...)
 };
 
