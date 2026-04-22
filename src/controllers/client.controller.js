@@ -1,6 +1,7 @@
 import Client from '../models/Client.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitNewClient } from '../services/realtime.service.js';
 
 // POST /api/client
 export const create = asyncHandler(async (req, res) => {
@@ -22,6 +23,7 @@ export const create = asyncHandler(async (req, res) => {
     address,
   });
 
+  emitNewClient(req.user.companyId, client);
   res.status(201).json({ client });
 });
 

@@ -5,6 +5,10 @@ import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadImage, uploadPdf } from '../services/storage.service.js';
 import { generateDeliveryNotePdf } from '../services/pdf.service.js';
+import {
+  emitNewDeliveryNote,
+  emitDeliveryNoteSigned,
+} from '../services/realtime.service.js';
 
 // POST /api/deliverynote
 export const create = asyncHandler(async (req, res) => {
@@ -30,6 +34,7 @@ export const create = asyncHandler(async (req, res) => {
     ...rest,
   });
 
+  emitNewDeliveryNote(req.user.companyId, note);
   res.status(201).json({ deliveryNote: note });
 });
 
@@ -148,6 +153,7 @@ export const sign = asyncHandler(async (req, res) => {
   note.pdfUrl = pdfUrl;
   await note.save();
 
+  emitDeliveryNoteSigned(req.user.companyId, note);
   res.json({ deliveryNote: note, signatureUrl, pdfUrl });
 });
 

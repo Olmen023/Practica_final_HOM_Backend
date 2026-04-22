@@ -2,6 +2,7 @@ import Project from '../models/Project.js';
 import Client  from '../models/Client.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitNewProject } from '../services/realtime.service.js';
 
 // POST /api/project
 export const create = asyncHandler(async (req, res) => {
@@ -28,6 +29,7 @@ export const create = asyncHandler(async (req, res) => {
     active,
   });
 
+  emitNewProject(req.user.companyId, project);
   res.status(201).json({ project });
 });
 
