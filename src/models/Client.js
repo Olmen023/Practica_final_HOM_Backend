@@ -41,10 +41,9 @@ const clientSchema = new mongoose.Schema(
 // Índice compuesto único: no puede haber dos clientes con el mismo CIF dentro de una compañía
 clientSchema.index({ company: 1, cif: 1 }, { unique: true });
 
-// 🐛 BUG 1: el hook sólo se engancha a 'find', no cubre 'findOne', 'findOneAndUpdate' ni 'countDocuments'
-// Consecuencia: GET /api/client/:id devuelve clientes archivados; el count de paginación
-// tampoco excluye borrados. Se detecta al escribir tests (commit 26).
-clientSchema.pre('find', function (next) {
+// Soft delete: excluye documentos con deleted=true de todas las queries
+// (find, findOne, countDocuments, findOneAndUpdate, etc.)
+clientSchema.pre(/^find/, function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }

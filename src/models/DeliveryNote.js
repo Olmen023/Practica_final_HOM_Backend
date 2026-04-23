@@ -60,8 +60,8 @@ const deliveryNoteSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Soft delete — se corregirá a /^find/ en el commit de fix (BUG 1)
-deliveryNoteSchema.pre('find', function (next) {
+// Soft delete: excluye documentos con deleted=true de todas las queries
+deliveryNoteSchema.pre(/^find/, function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }

@@ -51,8 +51,8 @@ const projectSchema = new mongoose.Schema(
 // Índice compuesto: código de proyecto único dentro de una compañía
 projectSchema.index({ company: 1, projectCode: 1 }, { unique: true });
 
-// Soft delete — mismo patrón que Client (se corregirá junto con Client en el commit de fix)
-projectSchema.pre('find', function (next) {
+// Soft delete: excluye documentos con deleted=true de todas las queries
+projectSchema.pre(/^find/, function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }
