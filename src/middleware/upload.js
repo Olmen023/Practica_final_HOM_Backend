@@ -4,11 +4,18 @@ import { AppError } from '../utils/AppError.js';
 // Usamos memoryStorage para pasar el buffer directamente a Cloudinary/Sharp
 const storage = multer.memoryStorage();
 
-// 🐛 BUG 4: fileFilter acepta cualquier mimetype sin restricción.
-// Debería rechazar archivos que no sean image/png, image/jpeg o image/webp.
-// Se corrige en el commit de fix correspondiente.
+const ALLOWED_MIMETYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
 const fileFilter = (req, file, cb) => {
-  cb(null, true); // acepta todo — cualquier archivo pasa
+  if (ALLOWED_MIMETYPES.has(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new AppError(
+      `Tipo de archivo no permitido: ${file.mimetype}. Solo se aceptan PNG, JPEG y WebP.`,
+      400,
+      true
+    ), false);
+  }
 };
 
 const limits = {
