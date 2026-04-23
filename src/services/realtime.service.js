@@ -1,13 +1,8 @@
 import { getIO } from '../sockets/index.js';
 
 /**
- * Emite un evento a la room de una compañía específica.
- *
- * 🐛 BUG 5: se usa io.emit() (broadcast global a todos los clientes conectados)
- * en lugar de io.to(`company:${companyId}`).emit() (solo la room de la compañía).
- * Esto hace que todos los usuarios de cualquier empresa reciban los eventos
- * de todas las demás empresas, lo que supone una fuga de información.
- * Se corrige en el commit de fix correspondiente.
+ * Emite un evento únicamente a la room de la compañía indicada.
+ * Cada socket se une a "company:<id>" al conectarse (ver sockets/index.js).
  *
  * @param {string} companyId  - ID de la compañía destinataria
  * @param {string} event      - Nombre del evento Socket.IO
