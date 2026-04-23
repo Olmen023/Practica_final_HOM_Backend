@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger.js';
 
 export const connectDB = async (uri) => {
   const conn = await mongoose.connect(uri);
-  console.log(`✅  MongoDB conectado: ${conn.connection.host}`);
+  logger.info({ host: conn.connection.host }, 'MongoDB conectado');
 };
 
 mongoose.connection.on('disconnected', () =>
-  console.warn('⚠️   MongoDB desconectado')
+  logger.warn('MongoDB desconectado')
 );
 mongoose.connection.on('error', (err) =>
-  console.error('❌  MongoDB error:', err.message)
+  logger.error({ err }, 'MongoDB error')
 );

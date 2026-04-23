@@ -4,6 +4,7 @@ import { connectDB } from './config/database.js';
 import config from './config/index.js';
 import { initSocketIO } from './sockets/index.js';
 import mongoose from 'mongoose';
+import logger from './utils/logger.js';
 
 const server = createServer(app);
 
@@ -13,58 +14,48 @@ initSocketIO(server);
 const start = async () => {
   await connectDB(config.MONGO_URI);
   server.listen(config.PORT, () => {
-    console.log(`🚀  Servidor en http://localhost:${config.PORT}`);
-    console.log(`📄  Entorno: ${config.NODE_ENV}`);
-    console.log(`🔌  Socket.IO escuchando`);
+    logger.info({ port: config.PORT, env: config.NODE_ENV }, '🚀 Servidor arrancado');
+    logger.info('🔌 Socket.IO escuchando');
   });
 };
 
 // ── Graceful Shutdown ─────────────────────────────────────────────────────────
-/**
- * Cierre ordenado al recibir señal de terminación.
- * 1. Deja de aceptar nuevas conexiones HTTP
- * 2. Espera a que las peticiones activas terminen (timeout 10 s)
- * 3. Cierra la conexión con MongoDB
- * 4. Sale con código 0
- */
 const shutdown = (signal) => {
-  console.log(`\n⚠️   Señal ${signal} recibida — iniciando graceful shutdown...`);
+  logger.warn({ signal }, 'Señal recibida — iniciando graceful shutdown');
 
   server.close(async () => {
-    console.log('✅  Servidor HTTP cerrado');
+    logger.info('Servidor HTTP cerrado');
     try {
       await mongoose.connection.close();
-      console.log('✅  Conexión MongoDB cerrada');
+      logger.info('Conexión MongoDB cerrada');
       process.exit(0);
     } catch (err) {
-      console.error('❌  Error al cerrar MongoDB:', err.message);
+      logger.error({ err }, 'Error al cerrar MongoDB');
       process.exit(1);
     }
   });
 
-  // Forzar cierre si tarda más de 10 segundos
   setTimeout(() => {
-    console.error('⏱️   Timeout de shutdown alcanzado — forzando salida');
+    logger.error('Timeout de shutdown alcanzado — forzando salida');
     process.exit(1);
   }, 10_000).unref();
 };
 
-process.on('SIGTERM', () => shutdown('SIGTERM')); // Docker stop / K8s pod termination
-process.on('SIGINT',  () => shutdown('SIGINT'));  // Ctrl+C en desarrollo
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));
 
-// Captura de excepciones no controladas (prevención de caídas silenciosas)
 process.on('uncaughtException', (err) => {
-  console.error('🔥  uncaughtException:', err);
+  logger.fatal({ err }, 'uncaughtException');
   shutdown('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('🔥  unhandledRejection:', reason);
+  logger.fatal({ reason }, 'unhandledRejection');
   shutdown('unhandledRejection');
 });
 
 start().catch((err) => {
-  console.error('❌  Error al arrancar:', err);
+  logger.fatal({ err }, 'Error al arrancar el servidor');
   process.exit(1);
 });
 
