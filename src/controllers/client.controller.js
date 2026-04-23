@@ -50,7 +50,8 @@ export const update = asyncHandler(async (req, res) => {
 
 // GET /api/client   — lista paginada con filtros opcionales
 export const list = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, sort = '-createdAt', name } = req.query;
+  // page y limit llegan como Number (Zod coerce en la ruta)
+  const { page, limit, sort, name } = req.query;
 
   const filter = { company: req.user.companyId };
   if (name) filter.name = { $regex: name, $options: 'i' };
@@ -58,7 +59,7 @@ export const list = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const [clients, totalItems] = await Promise.all([
-    Client.find(filter).sort(sort).skip(Number(skip)).limit(Number(limit)),
+    Client.find(filter).sort(sort).skip(skip).limit(limit),
     Client.countDocuments(filter),
   ]);
 
@@ -66,9 +67,9 @@ export const list = asyncHandler(async (req, res) => {
     data: clients,
     pagination: {
       totalItems,
-      totalPages:  Math.ceil(totalItems / Number(limit)),
-      currentPage: Number(page),
-      limit:       Number(limit),
+      totalPages:  Math.ceil(totalItems / limit),
+      currentPage: page,
+      limit,
     },
   });
 });

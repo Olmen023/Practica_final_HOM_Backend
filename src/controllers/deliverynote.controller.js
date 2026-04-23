@@ -40,17 +40,8 @@ export const create = asyncHandler(async (req, res) => {
 
 // GET /api/deliverynote   — lista paginada con filtros
 export const list = asyncHandler(async (req, res) => {
-  const {
-    page   = 1,
-    limit  = 10,
-    sort   = '-workDate',
-    project,
-    client,
-    format,
-    signed,
-    from,
-    to,
-  } = req.query;
+  // page y limit llegan como Number (Zod coerce en la ruta)
+  const { page, limit, sort, project, client, format, signed, from, to } = req.query;
 
   const filter = { company: req.user.companyId };
   if (project) filter.project = project;
@@ -70,8 +61,8 @@ export const list = asyncHandler(async (req, res) => {
       .populate('client',  'name cif')
       .populate('project', 'name projectCode')
       .sort(sort)
-      .skip(Number(skip))
-      .limit(Number(limit)),
+      .skip(skip)
+      .limit(limit),
     DeliveryNote.countDocuments(filter),
   ]);
 
@@ -79,9 +70,9 @@ export const list = asyncHandler(async (req, res) => {
     data: notes,
     pagination: {
       totalItems,
-      totalPages:  Math.ceil(totalItems / Number(limit)),
-      currentPage: Number(page),
-      limit:       Number(limit),
+      totalPages:  Math.ceil(totalItems / limit),
+      currentPage: page,
+      limit,
     },
   });
 });

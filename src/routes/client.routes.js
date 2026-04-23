@@ -11,6 +11,7 @@ import {
 import { verifyJwt } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.js';
 import { createClientSchema, updateClientSchema } from '../validators/client.validator.js';
+import { clientListSchema } from '../validators/pagination.validator.js';
 
 const router = Router();
 
@@ -94,7 +95,7 @@ router.use(verifyJwt);
  */
 
 router.post('/',              validate(createClientSchema), create);
-router.get('/',               list);
+router.get('/',               validate(clientListSchema, 'query'), list);
 router.get('/archived',       listArchived);
 router.get('/:id',            getById);
 router.put('/:id',            validate(updateClientSchema), update);

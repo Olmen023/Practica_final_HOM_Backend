@@ -35,14 +35,8 @@ export const create = asyncHandler(async (req, res) => {
 
 // GET /api/project   — lista paginada con filtros
 export const list = asyncHandler(async (req, res) => {
-  const {
-    page   = 1,
-    limit  = 10,
-    sort   = '-createdAt',
-    client,
-    name,
-    active,
-  } = req.query;
+  // page y limit llegan como Number (Zod coerce en la ruta)
+  const { page, limit, sort, client, name, active } = req.query;
 
   const filter = { company: req.user.companyId };
   if (client) filter.client = client;
@@ -55,8 +49,8 @@ export const list = asyncHandler(async (req, res) => {
     Project.find(filter)
       .populate('client', 'name cif')
       .sort(sort)
-      .skip(Number(skip))
-      .limit(Number(limit)),
+      .skip(skip)
+      .limit(limit),
     Project.countDocuments(filter),
   ]);
 
@@ -64,9 +58,9 @@ export const list = asyncHandler(async (req, res) => {
     data: projects,
     pagination: {
       totalItems,
-      totalPages:  Math.ceil(totalItems / Number(limit)),
-      currentPage: Number(page),
-      limit:       Number(limit),
+      totalPages:  Math.ceil(totalItems / limit),
+      currentPage: page,
+      limit,
     },
   });
 });

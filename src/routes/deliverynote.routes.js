@@ -10,6 +10,7 @@ import {
 import { verifyJwt } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.js';
 import { createDeliveryNoteSchema } from '../validators/deliverynote.validator.js';
+import { deliverynoteListSchema } from '../validators/pagination.validator.js';
 import { upload, handleMulterError } from '../middleware/upload.js';
 
 const router = Router();
@@ -119,7 +120,7 @@ router.use(verifyJwt);
  */
 
 router.post('/',     validate(createDeliveryNoteSchema), create);
-router.get('/',      list);
+router.get('/',      validate(deliverynoteListSchema, 'query'), list);
 
 // OJO: /pdf/:id debe declararse ANTES de /:id para que Express no lo interprete
 // como un documento con id='pdf'
