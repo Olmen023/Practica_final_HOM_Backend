@@ -63,7 +63,7 @@ export const list = asyncHandler(async (req, res) => {
     if (to)   filter.workDate.$lte = new Date(to);
   }
 
-  const skip = page * limit; // 🐛 BUG 3 heredado — se corrige en commit 25
+  const skip = (page - 1) * limit;
 
   const [notes, totalItems] = await Promise.all([
     DeliveryNote.find(filter)

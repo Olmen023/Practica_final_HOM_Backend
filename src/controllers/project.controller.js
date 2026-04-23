@@ -49,9 +49,7 @@ export const list = asyncHandler(async (req, res) => {
   if (name)   filter.name   = { $regex: name, $options: 'i' };
   if (active !== undefined) filter.active = active === 'true';
 
-  // 🐛 BUG 3 (mismo patrón copiado de client): skip = page * limit
-  // Se corrige en el mismo fix del commit 25 junto con client.controller.js
-  const skip = page * limit;
+  const skip = (page - 1) * limit;
 
   const [projects, totalItems] = await Promise.all([
     Project.find(filter)

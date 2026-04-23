@@ -55,11 +55,7 @@ export const list = asyncHandler(async (req, res) => {
   const filter = { company: req.user.companyId };
   if (name) filter.name = { $regex: name, $options: 'i' };
 
-  // 🐛 BUG 3: skip = page * limit en vez de (page - 1) * limit
-  // Con page=1 y limit=10, salta los primeros 10 resultados.
-  // El cliente recién creado nunca aparece en page=1.
-  // Se detecta en el test del commit 24 y se corrige en commit 25.
-  const skip = page * limit;
+  const skip = (page - 1) * limit;
 
   const [clients, totalItems] = await Promise.all([
     Client.find(filter).sort(sort).skip(Number(skip)).limit(Number(limit)),
