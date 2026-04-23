@@ -2,9 +2,11 @@ import express from 'express';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
+import swaggerUi from 'swagger-ui-express';
 import router from './routes/index.js';
 import { notFound, errorHandler } from './middleware/error-handler.js';
 import { globalLimiter } from './middleware/rate-limit.js';
+import { swaggerSpec } from './config/swagger.js';
 
 const app = express();
 
@@ -17,6 +19,11 @@ app.use(globalLimiter);             // rate limit global (200 req / 15 min)
 // ── Parsers ───────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// ── Swagger UI ────────────────────────────────────────────────────────────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'BildyApp API Docs',
+}));
 
 // ── Rutas ─────────────────────────────────────────────────────────────────────
 app.use('/', router);
