@@ -179,12 +179,6 @@ tests/
 
 ---
 
-## Planificación
-
-Ver [`Enunciado/PLANNING.md`](./Enunciado/PLANNING.md) para el plan detallado de 36 commits progresivos (20/04 → 23/04/2026) con descripción de bugs introducidos y corregidos.
-
----
-
 ## Autor
 
 **Olmen023** — Práctica Final · Bootcamp Desarrollo Web Backend
