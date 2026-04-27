@@ -92,6 +92,26 @@ router.use(verifyJwt);
  *         description: Cliente eliminado o archivado
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *
+ * /api/client/archived:
+ *   get:
+ *     summary: Lista clientes archivados (soft-deleted)
+ *     tags: [Client]
+ *     responses:
+ *       200:
+ *         description: Lista de clientes archivados
+ *
+ * /api/client/{id}/restore:
+ *   patch:
+ *     summary: Restaura un cliente archivado
+ *     tags: [Client]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string } }
+ *     responses:
+ *       200:
+ *         description: Cliente restaurado
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
  */
 
 router.post('/',              validate(createClientSchema), create);
