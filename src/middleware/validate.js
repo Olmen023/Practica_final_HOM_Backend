@@ -10,6 +10,13 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
   if (!result.success) {
     return next(AppError.validation(result.error.issues));
   }
-  req[source] = result.data;
+  // Express 5: req.query y req.params son getters sin setter;
+  // usamos defineProperty para poder sobrescribir con los datos validados/coercionados
+  Object.defineProperty(req, source, {
+    value:        result.data,
+    writable:     true,
+    configurable: true,
+    enumerable:   true,
+  });
   next();
 };

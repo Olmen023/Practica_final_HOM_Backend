@@ -1,16 +1,43 @@
 import nodemailer from 'nodemailer';
 import config from '../config/index.js';
+import logger from '../utils/logger.js';
+import { AppError } from '../utils/AppError.js';
 
-// Transporte singleton — se crea una sola vez al importar el módulo
-const transporter = nodemailer.createTransport({
-  host:   config.SMTP_HOST,
-  port:   Number(config.SMTP_PORT),
-  secure: Number(config.SMTP_PORT) === 465,
-  auth: {
-    user: config.SMTP_USER,
-    pass: config.SMTP_PASS,
-  },
-});
+/**
+ * Indica si el transporte SMTP está configurado con las credenciales necesarias.
+ * Sin ellas el servidor arranca igualmente; en dev/test los códigos se loguean
+ * por consola en lugar de enviarse por email.
+ */
+const smtpConfigured = !!(config.SMTP_HOST && config.SMTP_USER && config.SMTP_PASS);
+
+// Transporte singleton — se crea solo si las credenciales están disponibles
+const transporter = smtpConfigured
+  ? nodemailer.createTransport({
+      host:   config.SMTP_HOST,
+      port:   Number(config.SMTP_PORT),
+      secure: Number(config.SMTP_PORT) === 465,
+      auth: {
+        user: config.SMTP_USER,
+        pass: config.SMTP_PASS,
+      },
+    })
+  : null;
+
+/**
+ * Lanza AppError 503 en producción o loguea el aviso en dev/test.
+ * Devuelve true si se debe abortar el envío (SMTP no configurado).
+ */
+const checkSmtp = (to, code, type) => {
+  if (smtpConfigured) return false;
+  if (config.NODE_ENV === 'production') {
+    throw new AppError('El servicio de email no está disponible', 503, true);
+  }
+  logger.warn(
+    { to, code, type },
+    '[MAIL] SMTP no configurado — el email no se ha enviado (solo dev/test)'
+  );
+  return true; // abortar silenciosamente
+};
 
 /**
  * Envía el código de verificación de email al usuario recién registrado.
@@ -18,6 +45,8 @@ const transporter = nodemailer.createTransport({
  * @param {string} code  - Código de 6 dígitos
  */
 export const sendVerificationEmail = async (to, code) => {
+  if (checkSmtp(to, code, 'verification')) return;
+
   await transporter.sendMail({
     from:    `"BildyApp" <${config.SMTP_USER}>`,
     to,
@@ -51,6 +80,8 @@ export const sendVerificationEmail = async (to, code) => {
  * @param {string} code  - Código de 6 dígitos
  */
 export const sendPasswordResetEmail = async (to, code) => {
+  if (checkSmtp(to, code, 'password-reset')) return;
+
   await transporter.sendMail({
     from:    `"BildyApp" <${config.SMTP_USER}>`,
     to,

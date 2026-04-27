@@ -6,18 +6,23 @@ import config from '../config/index.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendVerificationEmail } from '../services/mail.service.js';
+import { uploadImage } from '../services/storage.service.js';
 
 /** Genera un código de verificación de 6 dígitos */
 const generateCode = () =>
   String(Math.floor(100000 + Math.random() * 900000));
 
-/** Genera access token */
-const signAccess = (id) =>
-  jwt.sign({ id }, config.JWT_SECRET, { expiresIn: config.JWT_EXPIRES_IN });
+/** Genera access token — incluye companyId y role para Socket.IO */
+const signAccess = (user) =>
+  jwt.sign(
+    { id: user._id.toString(), companyId: user.company?.toString() ?? null, role: user.role },
+    config.JWT_SECRET,
+    { expiresIn: config.JWT_EXPIRES_IN }
+  );
 
 /** Genera refresh token */
 const signRefresh = (id) =>
-  jwt.sign({ id }, config.JWT_REFRESH_SECRET, {
+  jwt.sign({ id: id.toString() }, config.JWT_REFRESH_SECRET, {
     expiresIn: config.JWT_REFRESH_EXPIRES_IN,
   });
 
@@ -45,7 +50,7 @@ export const register = asyncHandler(async (req, res) => {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const accessToken  = signAccess(user._id);
+  const accessToken  = signAccess(user);
   const refreshToken = signRefresh(user._id);
 
   await User.findByIdAndUpdate(user._id, { refreshToken });
@@ -106,7 +111,7 @@ export const login = asyncHandler(async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw AppError.unauthorized('Credenciales incorrectas');
 
-  const accessToken  = signAccess(user._id);
+  const accessToken  = signAccess(user);
   const refreshToken = signRefresh(user._id);
 
   await User.findByIdAndUpdate(user._id, { refreshToken });
@@ -134,7 +139,7 @@ export const refresh = asyncHandler(async (req, res) => {
     throw AppError.unauthorized('Refresh token inválido');
   }
 
-  const newAccess  = signAccess(user._id);
+  const newAccess  = signAccess(user);
   const newRefresh = signRefresh(user._id);
 
   await User.findByIdAndUpdate(user._id, { refreshToken: newRefresh });
@@ -164,4 +169,62 @@ export const deleteAccount = asyncHandler(async (req, res) => {
     await User.findByIdAndDelete(req.user.id);
   }
   res.json({ message: 'Cuenta eliminada' });
+});
+
+// PUT /api/user/register — Completar datos personales (onboarding)
+export const updatePersonal = asyncHandler(async (req, res) => {
+  const { name, lastName, nif, address } = req.body;
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { name, lastName, nif, address },
+    { new: true, runValidators: true }
+  );
+  if (!user) throw AppError.notFound('Usuario no encontrado');
+  res.json({ user });
+});
+
+// PATCH /api/user/company — Crear o actualizar compañía
+export const upsertCompany = asyncHandler(async (req, res) => {
+  const { name, cif, address, isFreelance } = req.body;
+
+  let company;
+
+  if (req.user.companyId) {
+    // Actualizar compañía existente
+    company = await Company.findByIdAndUpdate(
+      req.user.companyId,
+      { name, cif, address, isFreelance },
+      { new: true, runValidators: true }
+    );
+  } else {
+    // Crear nueva compañía
+    company = await Company.create({
+      owner: req.user.id,
+      name:  isFreelance ? undefined : name,
+      cif:   isFreelance ? undefined : cif,
+      address,
+      isFreelance,
+    });
+    // Asociar al usuario
+    await User.findByIdAndUpdate(req.user.id, { company: company._id });
+  }
+
+  res.json({ company });
+});
+
+// PATCH /api/user/logo — Subir logo de la compañía
+export const uploadLogo = asyncHandler(async (req, res) => {
+  if (!req.file) throw AppError.validation('Se requiere la imagen del logo');
+  if (!req.user.companyId) throw AppError.notFound('Primero crea una compañía');
+
+  const logoUrl = await uploadImage(req.file.buffer, 'logos', `company_${req.user.companyId}`);
+
+  const company = await Company.findByIdAndUpdate(
+    req.user.companyId,
+    { logo: logoUrl },
+    { new: true }
+  );
+
+  res.json({ company, logoUrl });
 });

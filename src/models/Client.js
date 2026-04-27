@@ -43,11 +43,13 @@ clientSchema.index({ company: 1, cif: 1 }, { unique: true });
 
 // Soft delete: excluye documentos con deleted=true de todas las queries
 // (find, findOne, countDocuments, findOneAndUpdate, etc.)
-clientSchema.pre(/^find/, function (next) {
+const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }
   next();
-});
+};
+clientSchema.pre(/^find/, excludeDeleted);
+clientSchema.pre('countDocuments', excludeDeleted);
 
 export default mongoose.model('Client', clientSchema);

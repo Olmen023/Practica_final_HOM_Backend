@@ -61,11 +61,13 @@ const deliveryNoteSchema = new mongoose.Schema(
 );
 
 // Soft delete: excluye documentos con deleted=true de todas las queries
-deliveryNoteSchema.pre(/^find/, function (next) {
+const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }
   next();
-});
+};
+deliveryNoteSchema.pre(/^find/, excludeDeleted);
+deliveryNoteSchema.pre('countDocuments', excludeDeleted);
 
 export default mongoose.model('DeliveryNote', deliveryNoteSchema);

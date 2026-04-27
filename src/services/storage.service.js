@@ -1,13 +1,26 @@
 import { v2 as cloudinary } from 'cloudinary';
 import sharp from 'sharp';
 import config from '../config/index.js';
+import { AppError } from '../utils/AppError.js';
 
-// Configuración de Cloudinary — se inyecta desde variables de entorno
-cloudinary.config({
-  cloud_name: config.CLOUDINARY_CLOUD_NAME,
-  api_key:    config.CLOUDINARY_API_KEY,
-  api_secret: config.CLOUDINARY_API_SECRET,
-});
+/**
+ * Indica si Cloudinary está configurado con las tres credenciales necesarias.
+ * Si no lo está, las funciones de subida lanzarán un AppError 503 en lugar
+ * de crashear con un error críptico de la SDK.
+ */
+const cloudinaryConfigured = !!(
+  config.CLOUDINARY_CLOUD_NAME &&
+  config.CLOUDINARY_API_KEY    &&
+  config.CLOUDINARY_API_SECRET
+);
+
+if (cloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: config.CLOUDINARY_CLOUD_NAME,
+    api_key:    config.CLOUDINARY_API_KEY,
+    api_secret: config.CLOUDINARY_API_SECRET,
+  });
+}
 
 /**
  * Optimiza una imagen con Sharp y la sube a Cloudinary.
@@ -17,6 +30,14 @@ cloudinary.config({
  * @returns {Promise<string>} URL segura del recurso subido
  */
 export const uploadImage = async (buffer, folder, publicId) => {
+  if (!cloudinaryConfigured) {
+    throw new AppError(
+      'Cloudinary no está configurado. Define CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en el .env',
+      503,
+      true
+    );
+  }
+
   // Optimización con Sharp: convertir a webp, reducir calidad
   const optimized = await sharp(buffer)
     .resize({ width: 800, withoutEnlargement: true })
@@ -50,6 +71,14 @@ export const uploadImage = async (buffer, folder, publicId) => {
  * @returns {Promise<string>} URL segura del PDF subido
  */
 export const uploadPdf = async (buffer, folder, publicId) => {
+  if (!cloudinaryConfigured) {
+    throw new AppError(
+      'Cloudinary no está configurado. Define CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en el .env',
+      503,
+      true
+    );
+  }
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -74,5 +103,6 @@ export const uploadPdf = async (buffer, folder, publicId) => {
  * @param {'image'|'raw'} resourceType
  */
 export const deleteResource = async (publicId, resourceType = 'image') => {
+  if (!cloudinaryConfigured) return; // noop si no está configurado
   await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 };

@@ -22,7 +22,7 @@ export class AppError extends Error {
     const msg = Array.isArray(issues)
       ? issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
       : String(issues);
-    return new AppError(msg, 422);
+    return new AppError(msg, 400);
   }
   static tooManyRequests(msg = 'Demasiadas peticiones, espera un momento') {
     return new AppError(msg, 429);

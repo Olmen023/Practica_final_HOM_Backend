@@ -52,11 +52,13 @@ const projectSchema = new mongoose.Schema(
 projectSchema.index({ company: 1, projectCode: 1 }, { unique: true });
 
 // Soft delete: excluye documentos con deleted=true de todas las queries
-projectSchema.pre(/^find/, function (next) {
+const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });
   }
   next();
-});
+};
+projectSchema.pre(/^find/, excludeDeleted);
+projectSchema.pre('countDocuments', excludeDeleted);
 
 export default mongoose.model('Project', projectSchema);

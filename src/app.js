@@ -1,5 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import swaggerUi from 'swagger-ui-express';
@@ -12,6 +13,18 @@ const app = express();
 
 // ── Seguridad ─────────────────────────────────────────────────────────────────
 app.use(helmet());                  // cabeceras HTTP seguras
+app.use(cors({ origin: true }));    // CORS — permitir cualquier origen (restringir en producción)
+// Express 5: req.query es un getter sin setter — lo convertimos en objeto
+// plano escribible para que express-mongo-sanitize pueda sanitizarlo
+app.use((req, _res, next) => {
+  Object.defineProperty(req, 'query', {
+    value:        { ...req.query },
+    writable:     true,
+    configurable: true,
+    enumerable:   true,
+  });
+  next();
+});
 app.use(mongoSanitize());           // previene inyección NoSQL ($, .)
 app.use(hpp());                     // previene contaminación de parámetros HTTP
 app.use(globalLimiter);             // rate limit global (200 req / 15 min)

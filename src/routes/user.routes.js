@@ -7,14 +7,21 @@ import {
   logout,
   getMe,
   deleteAccount,
+  updatePersonal,
+  upsertCompany,
+  uploadLogo,
 } from '../controllers/user.controller.js';
 import { verifyJwt } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.js';
+import { authLimiter } from '../middleware/rate-limit.js';
+import { upload, handleMulterError } from '../middleware/upload.js';
 import {
   registerSchema,
   loginSchema,
   verifyEmailSchema,
   refreshSchema,
+  onboardingPersonalSchema,
+  onboardingCompanySchema,
 } from '../validators/user.validator.js';
 
 const router = Router();
@@ -43,8 +50,30 @@ const router = Router();
  *         $ref: '#/components/responses/ValidationError'
  *       409:
  *         $ref: '#/components/responses/Conflict'
+ *   put:
+ *     summary: Completa datos personales del usuario (onboarding)
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, lastName, nif]
+ *             properties:
+ *               name:     { type: string }
+ *               lastName: { type: string }
+ *               nif:      { type: string }
+ *               address:  { $ref: '#/components/schemas/Address' }
+ *     responses:
+ *       200:
+ *         description: Datos personales actualizados
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
  */
-router.post('/register',   validate(registerSchema),     register);
+router.post('/register',   authLimiter, validate(registerSchema),   register);
+router.put('/register',    verifyJwt, validate(onboardingPersonalSchema), updatePersonal);
+
 /**
  * @swagger
  * /api/user/login:
@@ -68,6 +97,123 @@ router.post('/register',   validate(registerSchema),     register);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
+router.post('/login',      authLimiter, validate(loginSchema),      login);
+
+/**
+ * @swagger
+ * /api/user/validation:
+ *   put:
+ *     summary: Verifica el email con código de 6 dígitos
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [code]
+ *             properties:
+ *               code: { type: string, example: '123456' }
+ *     responses:
+ *       200:
+ *         description: Email verificado correctamente
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       429:
+ *         description: Demasiados intentos de verificación
+ */
+router.put('/validation',  verifyJwt, validate(verifyEmailSchema), verifyEmail);
+
+/**
+ * @swagger
+ * /api/user/refresh:
+ *   post:
+ *     summary: Renueva el access token usando un refresh token
+ *     tags: [User]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken: { type: string }
+ *     responses:
+ *       200:
+ *         description: Nuevos tokens generados
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/refresh',    validate(refreshSchema),       refresh);
+
+/**
+ * @swagger
+ * /api/user/logout:
+ *   post:
+ *     summary: Cierra sesión e invalida el refresh token
+ *     tags: [User]
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.post('/logout',     verifyJwt,                     logout);
+
+/**
+ * @swagger
+ * /api/user/company:
+ *   patch:
+ *     summary: Crea o actualiza la compañía del usuario
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isFreelance: { type: boolean }
+ *               name:        { type: string }
+ *               cif:         { type: string }
+ *               address:     { $ref: '#/components/schemas/Address' }
+ *     responses:
+ *       200:
+ *         description: Compañía creada o actualizada
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.patch('/company',   verifyJwt, validate(onboardingCompanySchema), upsertCompany);
+
+/**
+ * @swagger
+ * /api/user/logo:
+ *   patch:
+ *     summary: Sube el logo de la compañía
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Imagen PNG/JPEG/WebP del logo
+ *     responses:
+ *       200:
+ *         description: Logo subido correctamente
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+router.patch('/logo',      verifyJwt, upload.single('logo'), handleMulterError, uploadLogo);
+
 /**
  * @swagger
  * /api/user:
@@ -94,10 +240,6 @@ router.post('/register',   validate(registerSchema),     register);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.put('/validation',  verifyJwt, validate(verifyEmailSchema), verifyEmail);
-router.post('/login',      validate(loginSchema),         login);
-router.post('/refresh',    validate(refreshSchema),       refresh);
-router.post('/logout',     verifyJwt,                     logout);
 router.get('/',            verifyJwt,                     getMe);
 router.delete('/',         verifyJwt,                     deleteAccount);
 
