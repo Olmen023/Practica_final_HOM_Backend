@@ -38,6 +38,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'BildyApp API Docs',
 }));
 
+// ── Interfaz de prueba (archivos estáticos) ───────────────────────────────────
+app.use(express.static('public'));
+
 // ── Rutas ─────────────────────────────────────────────────────────────────────
 app.use('/', router);
 
