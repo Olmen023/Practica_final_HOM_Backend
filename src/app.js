@@ -12,7 +12,23 @@ import { swaggerSpec } from './config/swagger.js';
 const app = express();
 
 // ── Seguridad ─────────────────────────────────────────────────────────────────
-app.use(helmet());                  // cabeceras HTTP seguras
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:    ["'self'"],
+      scriptSrc:     ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+      scriptSrcAttr: ["'unsafe-inline'"],          // permite onclick/onsubmit en la UI de prueba
+      styleSrc:      ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+      imgSrc:        ["'self'", 'data:', 'https:'],
+      connectSrc:    ["'self'"],
+      fontSrc:       ["'self'", 'https:', 'data:'],
+      objectSrc:     ["'none'"],
+      frameAncestors:["'self'"],
+      baseUri:       ["'self'"],
+      formAction:    ["'self'"],
+    },
+  },
+}));                                // cabeceras HTTP seguras
 app.use(cors({ origin: true }));    // CORS — permitir cualquier origen (restringir en producción)
 // Express 5: req.query es un getter sin setter — lo convertimos en objeto
 // plano escribible para que express-mongo-sanitize pueda sanitizarlo
