@@ -8,7 +8,6 @@ import logger from './utils/logger.js';
 
 const server = createServer(app);
 
-// Inicializar Socket.IO sobre el mismo servidor HTTP
 initSocketIO(server);
 
 const start = async () => {
@@ -19,7 +18,6 @@ const start = async () => {
   });
 };
 
-// ── Graceful Shutdown ─────────────────────────────────────────────────────────
 const shutdown = (signal) => {
   logger.warn({ signal }, 'Señal recibida — iniciando graceful shutdown');
 

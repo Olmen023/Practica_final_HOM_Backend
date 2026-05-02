@@ -26,7 +26,6 @@ const hoursNoteSchema = z.object({
   workers:     z.array(workerSchema).optional(),
 });
 
-// discriminatedUnion garantiza validación según el campo 'format'
 export const createDeliveryNoteSchema = z.discriminatedUnion('format', [
   materialNoteSchema,
   hoursNoteSchema,

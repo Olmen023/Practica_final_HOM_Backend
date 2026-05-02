@@ -48,10 +48,8 @@ const projectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Índice compuesto: código de proyecto único dentro de una compañía
 projectSchema.index({ company: 1, projectCode: 1 }, { unique: true });
 
-// Soft delete: excluye documentos con deleted=true de todas las queries
 const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });

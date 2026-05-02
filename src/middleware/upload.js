@@ -1,7 +1,6 @@
 import multer from 'multer';
 import { AppError } from '../utils/AppError.js';
 
-// Usamos memoryStorage para pasar el buffer directamente a Cloudinary/Sharp
 const storage = multer.memoryStorage();
 
 const ALLOWED_MIMETYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
@@ -19,15 +18,11 @@ const fileFilter = (req, file, cb) => {
 };
 
 const limits = {
-  fileSize: 5 * 1024 * 1024, // 5 MB
+  fileSize: 5 * 1024 * 1024,
 };
 
 export const upload = multer({ storage, fileFilter, limits });
 
-/**
- * Middleware de error específico para Multer.
- * Se añade después del handler de ruta que use upload.*
- */
 export const handleMulterError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

@@ -59,7 +59,6 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Virtual: nombre completo
 userSchema.virtual('fullName').get(function () {
   if (!this.name && !this.lastName) return '';
   return `${this.name ?? ''} ${this.lastName ?? ''}`.trim();

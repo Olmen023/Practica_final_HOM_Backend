@@ -10,7 +10,6 @@ beforeAll(dbConnect);
 afterEach(dbClear);
 afterAll(dbClose);
 
-// ── POST /api/user/register ───────────────────────────────────────────────────
 describe('POST /api/user/register', () => {
   it('registra un usuario nuevo y devuelve accessToken + refreshToken', async () => {
     const res = await request(app)
@@ -43,7 +42,6 @@ describe('POST /api/user/register', () => {
   });
 });
 
-// ── POST /api/user/login ──────────────────────────────────────────────────────
 describe('POST /api/user/login', () => {
   it('devuelve tokens con credenciales correctas', async () => {
     const { user } = await createUserWithCompany({ email: 'login@test.com' });
@@ -76,7 +74,6 @@ describe('POST /api/user/login', () => {
   });
 });
 
-// ── GET /api/user ─────────────────────────────────────────────────────────────
 describe('GET /api/user', () => {
   it('devuelve el perfil del usuario autenticado', async () => {
     const { user } = await createUserWithCompany();
@@ -102,7 +99,6 @@ describe('GET /api/user', () => {
   });
 });
 
-// ── PUT /api/user/validation ──────────────────────────────────────────────────
 describe('PUT /api/user/validation', () => {
   it('verifica el email con el código correcto', async () => {
     const regRes = await request(app)
@@ -111,7 +107,6 @@ describe('PUT /api/user/validation', () => {
 
     const { accessToken } = regRes.body;
 
-    // Recuperar el código directamente de la BD en-memoria
     const User = (await import('../src/models/User.js')).default;
     const userDoc = await User.findOne({ email: 'verify@test.com' })
       .select('+verificationCode');
@@ -138,7 +133,6 @@ describe('PUT /api/user/validation', () => {
   });
 });
 
-// ── DELETE /api/user ──────────────────────────────────────────────────────────
 describe('DELETE /api/user', () => {
   it('elimina la cuenta del usuario autenticado', async () => {
     const { user } = await createUserWithCompany();
@@ -152,7 +146,6 @@ describe('DELETE /api/user', () => {
   });
 });
 
-// ── PUT /api/user/register (onboarding personal) ──────────────────────────────
 describe('PUT /api/user/register (onboarding)', () => {
   it('actualiza nombre, apellido y NIF del usuario (200)', async () => {
     const { user } = await createUserWithCompany();
@@ -173,13 +166,12 @@ describe('PUT /api/user/register (onboarding)', () => {
     const res = await request(app)
       .put('/api/user/register')
       .set('Authorization', authHeader(user._id))
-      .send({ lastName: 'García', nif: '12345678A' }); // sin name
+      .send({ lastName: 'García', nif: '12345678A' });
 
     expect(res.status).toBe(400);
   });
 });
 
-// ── PATCH /api/user/company ───────────────────────────────────────────────────
 describe('PATCH /api/user/company', () => {
   it('actualiza la compañía existente del usuario (200)', async () => {
     const { user } = await createUserWithCompany();
@@ -210,7 +202,6 @@ describe('PATCH /api/user/company', () => {
   });
 });
 
-// ── GET /health ───────────────────────────────────────────────────────────────
 describe('GET /health', () => {
   it('devuelve 200 con status ok', async () => {
     const res = await request(app).get('/health');
@@ -222,7 +213,6 @@ describe('GET /health', () => {
   });
 });
 
-// ── POST /api/user/logout ─────────────────────────────────────────────────────
 describe('POST /api/user/logout', () => {
   it('cierra la sesión del usuario autenticado (200)', async () => {
     const { user } = await createUserWithCompany();
@@ -236,10 +226,8 @@ describe('POST /api/user/logout', () => {
   });
 });
 
-// ── POST /api/user/refresh ────────────────────────────────────────────────────
 describe('POST /api/user/refresh', () => {
   it('devuelve nuevos tokens con refresh token válido (200)', async () => {
-    // Registrar para obtener un refreshToken real almacenado en BD
     const regRes = await request(app)
       .post('/api/user/register')
       .send({ email: 'refresh@test.com', password: 'Segura123!' });
@@ -264,7 +252,6 @@ describe('POST /api/user/refresh', () => {
   });
 });
 
-// ── DELETE /api/user (soft) ───────────────────────────────────────────────────
 describe('DELETE /api/user — soft delete', () => {
   it('archiva la cuenta con ?soft=true (200)', async () => {
     const { user } = await createUserWithCompany();
@@ -278,11 +265,9 @@ describe('DELETE /api/user — soft delete', () => {
   });
 });
 
-// ── Middleware de autenticación — casos de error ──────────────────────────────
 describe('verifyJwt — casos de error', () => {
   it('rechaza token de usuario eliminado (401)', async () => {
     const { user } = await createUserWithCompany();
-    // Marcar usuario como eliminado directamente en BD
     const User = (await import('../src/models/User.js')).default;
     await User.findByIdAndUpdate(user._id, { deleted: true });
 
@@ -294,7 +279,6 @@ describe('verifyJwt — casos de error', () => {
   });
 
   it('rechaza token expirado (401)', async () => {
-    // Generar token con exp ya pasado
     const expiredToken = jwt.sign(
       { id: 'fakeid', exp: Math.floor(Date.now() / 1000) - 100 },
       config.JWT_SECRET
@@ -309,10 +293,8 @@ describe('verifyJwt — casos de error', () => {
   });
 });
 
-// ── PATCH /api/user/company — crear empresa nueva ─────────────────────────────
 describe('PATCH /api/user/company — usuario sin empresa', () => {
   it('crea una empresa nueva si el usuario no tiene compañía (200)', async () => {
-    // Crear usuario sin compañía
     const bcrypt = (await import('bcryptjs')).default;
     const User   = (await import('../src/models/User.js')).default;
     const hashed = await bcrypt.hash('Test1234!', 10);
@@ -338,7 +320,6 @@ describe('PATCH /api/user/company — usuario sin empresa', () => {
   });
 });
 
-// ── Ruta no existente — notFound middleware ───────────────────────────────────
 describe('Rutas no registradas', () => {
   it('devuelve 404 para rutas inexistentes', async () => {
     const res = await request(app).get('/api/ruta-que-no-existe');

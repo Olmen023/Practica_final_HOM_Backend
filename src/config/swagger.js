@@ -25,7 +25,6 @@ const options = {
         },
       },
       schemas: {
-        // ── User ──────────────────────────────────────────────────────────────
         UserRegister: {
           type: 'object',
           required: ['email', 'password'],
@@ -57,7 +56,6 @@ const options = {
             },
           },
         },
-        // ── Client ────────────────────────────────────────────────────────────
         ClientCreate: {
           type: 'object',
           required: ['name', 'cif'],
@@ -69,7 +67,6 @@ const options = {
             address: { $ref: '#/components/schemas/Address' },
           },
         },
-        // ── Project ───────────────────────────────────────────────────────────
         ProjectCreate: {
           type: 'object',
           required: ['client', 'name', 'projectCode'],
@@ -82,7 +79,6 @@ const options = {
             notes:       { type: 'string' },
           },
         },
-        // ── DeliveryNote ──────────────────────────────────────────────────────
         DeliveryNoteCreate: {
           type: 'object',
           required: ['project', 'client', 'format', 'workDate'],
@@ -92,7 +88,7 @@ const options = {
             format:      { type: 'string', enum: ['hours', 'material'] },
             description: { type: 'string' },
             workDate:    { type: 'string', format: 'date-time' },
-            hours:       { type: 'number', description: 'Solo para format=hours' },
+            hours:       { type: 'number' },
             workers:     {
               type: 'array',
               items: {
@@ -103,12 +99,11 @@ const options = {
                 },
               },
             },
-            material:    { type: 'string', description: 'Solo para format=material' },
+            material:    { type: 'string' },
             quantity:    { type: 'number' },
             unit:        { type: 'string' },
           },
         },
-        // ── Shared ────────────────────────────────────────────────────────────
         Address: {
           type: 'object',
           properties: {

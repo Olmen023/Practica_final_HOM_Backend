@@ -2,21 +2,11 @@ import mongoose      from 'mongoose';
 import DeliveryNote   from '../models/DeliveryNote.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
-/**
- * GET /api/dashboard
- *
- * Estadísticas de la compañía mediante aggregation pipeline:
- *   - Albaranes por mes (últimos 12 meses)
- *   - Horas totales por proyecto (top 10)
- *   - Materiales más usados por cliente (top 10)
- *   - Resumen global (totales, firmados, pendientes)
- */
 export const getDashboard = asyncHandler(async (req, res) => {
   const companyId = new mongoose.Types.ObjectId(req.user.companyId);
 
   const [summary, byMonth, hoursByProject, materialsByClient] = await Promise.all([
 
-    // ── Resumen global ─────────────────────────────────────────────────────────
     DeliveryNote.aggregate([
       { $match: { company: companyId, deleted: false } },
       {
@@ -33,7 +23,6 @@ export const getDashboard = asyncHandler(async (req, res) => {
       { $project: { _id: 0 } },
     ]),
 
-    // ── Albaranes por mes (últimos 12 meses) ───────────────────────────────────
     DeliveryNote.aggregate([
       {
         $match: {
@@ -64,7 +53,6 @@ export const getDashboard = asyncHandler(async (req, res) => {
       },
     ]),
 
-    // ── Horas totales por proyecto (top 10) ────────────────────────────────────
     DeliveryNote.aggregate([
       { $match: { company: companyId, deleted: false, format: 'hours' } },
       {
@@ -97,7 +85,6 @@ export const getDashboard = asyncHandler(async (req, res) => {
       },
     ]),
 
-    // ── Materiales más usados por cliente (top 10) ─────────────────────────────
     DeliveryNote.aggregate([
       { $match: { company: companyId, deleted: false, format: 'material' } },
       {

@@ -3,7 +3,6 @@ import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitNewClient } from '../services/realtime.service.js';
 
-// POST /api/client
 export const create = asyncHandler(async (req, res) => {
   const { name, cif, email, phone, address } = req.body;
 
@@ -27,7 +26,6 @@ export const create = asyncHandler(async (req, res) => {
   res.status(201).json({ client });
 });
 
-// GET /api/client/:id
 export const getById = asyncHandler(async (req, res) => {
   const client = await Client.findOne({
     _id:     req.params.id,
@@ -37,7 +35,6 @@ export const getById = asyncHandler(async (req, res) => {
   res.json({ client });
 });
 
-// PUT /api/client/:id
 export const update = asyncHandler(async (req, res) => {
   const client = await Client.findOneAndUpdate(
     { _id: req.params.id, company: req.user.companyId },
@@ -48,9 +45,7 @@ export const update = asyncHandler(async (req, res) => {
   res.json({ client });
 });
 
-// GET /api/client   — lista paginada con filtros opcionales
 export const list = asyncHandler(async (req, res) => {
-  // page y limit llegan como Number (Zod coerce en la ruta)
   const { page, limit, sort, name } = req.query;
 
   const filter = { company: req.user.companyId };
@@ -74,7 +69,6 @@ export const list = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/client/archived
 export const listArchived = asyncHandler(async (req, res) => {
   const clients = await Client.find({ company: req.user.companyId, deleted: true })
     .setOptions({ includeDeleted: true })
@@ -83,7 +77,6 @@ export const listArchived = asyncHandler(async (req, res) => {
   res.json({ data: clients, total: clients.length });
 });
 
-// PATCH /api/client/:id/restore
 export const restore = asyncHandler(async (req, res) => {
   const client = await Client.findOneAndUpdate(
     { _id: req.params.id, company: req.user.companyId, deleted: true },
@@ -95,7 +88,6 @@ export const restore = asyncHandler(async (req, res) => {
   res.json({ client });
 });
 
-// DELETE /api/client/:id   (?soft=true → borrado lógico)
 export const remove = asyncHandler(async (req, res) => {
   const soft = req.query.soft === 'true';
 

@@ -1,25 +1,9 @@
 import { PassThrough } from 'stream';
 import PDFDocument from 'pdfkit';
 
-/**
- * Genera el PDF de un albarán y lo ESCRIBE en el destino (stream).
- *
- * Para streaming directo a Express:
- *   pipeDeliveryNotePdf(note, res);
- *
- * Para obtener un Buffer (p.ej. subir a Cloudinary):
- *   const buf = await generateDeliveryNotePdf(note, signatureBuffer);
- *
- * @param {object} note              - Documento DeliveryNote populado
- * @param {stream.Writable} dest     - Destino del pipe (res, PassThrough…)
- * @param {Buffer} [signatureBuffer] - Buffer de la firma desde Multer.
- *                                    Si existe, se embebe directamente en el PDF
- *                                    con doc.image(buffer) — sin pasar por Cloudinary.
- */
 export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
 
-  // ── Cabecera ─────────────────────────────────────────────────────────────────
   doc
     .fontSize(22).font('Helvetica-Bold')
     .text('ALBARÁN DE TRABAJO', { align: 'center' })
@@ -38,7 +22,6 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
 
   doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke().moveDown(0.8);
 
-  // ── Cliente ──────────────────────────────────────────────────────────────────
   const client = note.client ?? {};
   doc
     .font('Helvetica-Bold').fontSize(12).text('CLIENTE')
@@ -48,7 +31,6 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
     .text(`Email:  ${client.email ?? '—'}`)
     .moveDown(0.8);
 
-  // ── Proyecto ─────────────────────────────────────────────────────────────────
   const project = note.project ?? {};
   doc
     .font('Helvetica-Bold').fontSize(12).text('PROYECTO')
@@ -57,14 +39,12 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
     .text(`Código: ${project.projectCode ?? '—'}`)
     .moveDown(0.8);
 
-  // ── Descripción ──────────────────────────────────────────────────────────────
   doc
     .font('Helvetica-Bold').fontSize(12).text('DESCRIPCIÓN')
     .font('Helvetica').fontSize(10)
     .text(note.description ?? '—')
     .moveDown(0.8);
 
-  // ── Detalle horas / materiales ────────────────────────────────────────────────
   if (note.format === 'hours') {
     const workers = note.workers ?? [];
     doc.font('Helvetica-Bold').fontSize(12).text('HORAS TRABAJADAS')
@@ -82,12 +62,9 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
   }
   doc.moveDown(0.8);
 
-  // ── Firma ─────────────────────────────────────────────────────────────────────
   doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke().moveDown(0.8);
 
   if (signatureBuffer) {
-    // ✅ Enfoque clase: doc.image(buffer) embebe la firma directamente
-    // sin necesidad de URL externa ni paso previo por Cloudinary
     doc
       .font('Helvetica-Bold').fontSize(12).text('FIRMA DEL RECEPTOR')
       .moveDown(0.5);
@@ -108,7 +85,6 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
       .text('Pendiente de firma.', { align: 'center' });
   }
 
-  // ── Pie ───────────────────────────────────────────────────────────────────────
   doc
     .moveDown(2).fontSize(8).fillColor('grey')
     .text('Generado por BildyApp — Gestión de Obras', { align: 'center' });
@@ -117,14 +93,6 @@ export const pipeDeliveryNotePdf = (note, dest, signatureBuffer = null) => {
   doc.end();
 };
 
-/**
- * Variante que devuelve Promise<Buffer>.
- * Necesaria cuando hay que subir el PDF a Cloudinary (endpoint /sign).
- *
- * @param {object} note
- * @param {Buffer} [signatureBuffer]
- * @returns {Promise<Buffer>}
- */
 export const generateDeliveryNotePdf = (note, signatureBuffer = null) =>
   new Promise((resolve, reject) => {
     const pass   = new PassThrough();

@@ -15,7 +15,6 @@ beforeEach(async () => {
   token = authHeader(user._id);
 });
 
-// ── POST /api/client ──────────────────────────────────────────────────────────
 describe('POST /api/client', () => {
   it('crea un cliente y devuelve 201', async () => {
     const res = await request(app)
@@ -55,7 +54,6 @@ describe('POST /api/client', () => {
   });
 });
 
-// ── GET /api/client/:id ───────────────────────────────────────────────────────
 describe('GET /api/client/:id', () => {
   it('devuelve el cliente por id', async () => {
     const client = await createClient(company._id, user._id);
@@ -86,7 +84,6 @@ describe('GET /api/client/:id', () => {
   });
 });
 
-// ── PUT /api/client/:id ───────────────────────────────────────────────────────
 describe('PUT /api/client/:id', () => {
   it('actualiza el nombre del cliente', async () => {
     const client = await createClient(company._id, user._id);
@@ -101,7 +98,6 @@ describe('PUT /api/client/:id', () => {
   });
 });
 
-// ── GET /api/client ───────────────────────────────────────────────────────────
 describe('GET /api/client', () => {
   it('lista los clientes de la compañía', async () => {
     await createClient(company._id, user._id);
@@ -115,9 +111,6 @@ describe('GET /api/client', () => {
     expect(res.body.pagination.totalItems).toBe(2);
   });
 
-  // 🐛 BUG 3: este test falla hasta que se aplique el fix del commit 25.
-  // Con page=1 y limit=10: skip = 1*10 = 10 → salta los 5 clientes → data=[]
-  // Correcto: skip = (1-1)*10 = 0 → devuelve los 5 clientes
   it('page=1 devuelve los primeros resultados (detecta BUG 3)', async () => {
     for (let i = 0; i < 5; i++) {
       await createClient(company._id, user._id);
@@ -132,7 +125,6 @@ describe('GET /api/client', () => {
   });
 });
 
-// ── DELETE y soft delete ──────────────────────────────────────────────────────
 describe('DELETE /api/client/:id', () => {
   it('elimina (hard delete) el cliente', async () => {
     const client = await createClient(company._id, user._id);
@@ -157,7 +149,6 @@ describe('DELETE /api/client/:id', () => {
   });
 });
 
-// ── Archivar y restaurar ──────────────────────────────────────────────────────
 describe('GET /api/client/archived y PATCH /:id/restore', () => {
   it('lista clientes archivados', async () => {
     const client = await createClient(company._id, user._id);

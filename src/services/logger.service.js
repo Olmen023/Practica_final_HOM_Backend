@@ -1,17 +1,9 @@
 import config from '../config/index.js';
 
-/**
- * Envía una notificación de error 5XX al canal de Slack configurado.
- * Si SLACK_WEBHOOK_URL no está definida, hace un log a consola y no falla.
- *
- * @param {Error}   err - El error capturado
- * @param {object}  req - Objeto request de Express (para contexto)
- */
 export const notifySlack = async (err, req) => {
   const webhookUrl = config.SLACK_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    // Sin webhook configurado: solo log de consola (útil en local/test)
     console.error('[Slack logger desactivado] Error 5XX:', err.message);
     return;
   }
@@ -60,7 +52,6 @@ export const notifySlack = async (err, req) => {
       console.error(`[Slack] Error al enviar webhook: ${res.status} ${res.statusText}`);
     }
   } catch (fetchErr) {
-    // El fallo del logger no debe interrumpir la respuesta al cliente
     console.error('[Slack] Excepción al enviar webhook:', fetchErr.message);
   }
 };

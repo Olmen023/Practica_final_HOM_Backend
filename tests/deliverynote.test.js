@@ -10,18 +10,12 @@ import {
 } from './helpers/factories.js';
 import { authHeader } from './helpers/auth.js';
 
-/**
- * Con ESM, los import estáticos se ejecutan ANTES que cualquier código del
- * módulo, incluyendo jest.unstable_mockModule. Por eso hay que registrar el
- * mock PRIMERO y cargar `app` después mediante import dinámico.
- */
 jest.unstable_mockModule('../src/services/storage.service.js', () => ({
   uploadImage:    jest.fn().mockResolvedValue('https://cdn.example.com/sig.webp'),
   uploadPdf:      jest.fn().mockResolvedValue('https://cdn.example.com/note.pdf'),
   deleteResource: jest.fn().mockResolvedValue(undefined),
 }));
 
-// PNG mínimo (1×1 px) para tests de firma sin depender de Cloudinary
 const SIGNATURE_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64'
@@ -31,7 +25,6 @@ let app;
 let user, company, client, project, token;
 
 beforeAll(async () => {
-  // Importar app después de registrar el mock
   ({ default: app } = await import('../src/app.js'));
   await dbConnect();
 });
@@ -45,7 +38,6 @@ beforeEach(async () => {
   token   = authHeader(user._id);
 });
 
-// ── POST /api/deliverynote ────────────────────────────────────────────────────
 describe('POST /api/deliverynote', () => {
   it('crea un albarán de horas y devuelve 201', async () => {
     const res = await request(app)
@@ -104,7 +96,6 @@ describe('POST /api/deliverynote', () => {
   });
 });
 
-// ── GET /api/deliverynote/:id ─────────────────────────────────────────────────
 describe('GET /api/deliverynote/:id', () => {
   it('devuelve el albarán con populate de client y project', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
@@ -127,7 +118,6 @@ describe('GET /api/deliverynote/:id', () => {
   });
 });
 
-// ── GET /api/deliverynote ─────────────────────────────────────────────────────
 describe('GET /api/deliverynote', () => {
   it('lista albaranes con paginación correcta', async () => {
     await createDeliveryNote(company._id, user._id, client._id, project._id);
@@ -142,7 +132,6 @@ describe('GET /api/deliverynote', () => {
   });
 });
 
-// ── DELETE /api/deliverynote/:id ──────────────────────────────────────────────
 describe('DELETE /api/deliverynote/:id', () => {
   it('elimina un albarán no firmado', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
@@ -168,7 +157,6 @@ describe('DELETE /api/deliverynote/:id', () => {
   });
 });
 
-// ── PATCH /api/deliverynote/:id/sign ─────────────────────────────────────────
 describe('PATCH /api/deliverynote/:id/sign', () => {
   it('firma un albarán con imagen PNG válida (200)', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
@@ -212,7 +200,6 @@ describe('PATCH /api/deliverynote/:id/sign', () => {
   });
 });
 
-// ── GET /api/deliverynote/pdf/:id ─────────────────────────────────────────────
 describe('GET /api/deliverynote/pdf/:id', () => {
   it('genera PDF al vuelo para albarán sin firma', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
@@ -221,7 +208,6 @@ describe('GET /api/deliverynote/pdf/:id', () => {
       .get(`/api/deliverynote/pdf/${note._id}`)
       .set('Authorization', token);
 
-    // Sin firma → genera PDF en memoria y lo envía
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/pdf/);
   });
@@ -235,7 +221,7 @@ describe('GET /api/deliverynote/pdf/:id', () => {
     const res = await request(app)
       .get(`/api/deliverynote/pdf/${note._id}`)
       .set('Authorization', token)
-      .redirects(0); // no seguir la redirección
+      .redirects(0);
 
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe('https://cdn.example.com/note.pdf');
