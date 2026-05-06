@@ -6,7 +6,7 @@ const logger = pino({
       : process.env.NODE_ENV === 'production' ? 'info'
       : 'debug'),
 
-  ...(process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test'
+  ...(process.env.NODE_ENV === 'development'
     ? {
         transport: {
           target:  'pino-pretty',
