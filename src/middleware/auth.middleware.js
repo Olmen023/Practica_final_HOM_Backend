@@ -3,10 +3,6 @@ import { AppError } from '../utils/AppError.js';
 import config from '../config/index.js';
 import User from '../models/User.js';
 
-/**
- * Verifica el JWT de la cabecera Authorization: Bearer <token>
- * Adjunta req.user = { id, companyId, role }
- */
 export const verifyJwt = async (req, res, next) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {

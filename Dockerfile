@@ -1,9 +1,10 @@
 # ── Stage 1: dependencias ─────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 
+ENV NODE_ENV=production
+
 WORKDIR /app
 
-# Copiar solo los manifiestos para aprovechar la caché de Docker
 COPY package*.json ./
 
 # Instalar únicamente dependencias de producción

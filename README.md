@@ -2,6 +2,8 @@
 
 API REST desarrollada con **Node.js 22 + Express 5** para la gestión de albaranes de obra: clientes, proyectos, partes de horas/materiales y firma digital.
 
+🚀 **Deploy:** [https://practicafinalhombackend-production.up.railway.app](https://practicafinalhombackend-production.up.railway.app)
+
 ---
 
 ## Stack

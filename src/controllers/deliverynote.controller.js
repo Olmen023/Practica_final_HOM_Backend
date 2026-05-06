@@ -10,11 +10,9 @@ import {
   emitDeliveryNoteSigned,
 } from '../services/realtime.service.js';
 
-// POST /api/deliverynote
 export const create = asyncHandler(async (req, res) => {
   const { project, client, format, description, workDate, ...rest } = req.body;
 
-  // Verificar que el proyecto y el cliente pertenecen a la compañía del usuario
   const [projectDoc, clientDoc] = await Promise.all([
     Project.findOne({ _id: project, company: req.user.companyId }),
     Client.findOne({ _id: client,  company: req.user.companyId }),
@@ -38,9 +36,7 @@ export const create = asyncHandler(async (req, res) => {
   res.status(201).json({ deliveryNote: note });
 });
 
-// GET /api/deliverynote   — lista paginada con filtros
 export const list = asyncHandler(async (req, res) => {
-  // page y limit llegan como Number (Zod coerce en la ruta)
   const { page, limit, sort, project, client, format, signed, from, to } = req.query;
 
   const filter = { company: req.user.companyId };
@@ -77,7 +73,6 @@ export const list = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/deliverynote/:id
 export const getById = asyncHandler(async (req, res) => {
   const note = await DeliveryNote.findOne({
     _id:     req.params.id,
@@ -91,8 +86,6 @@ export const getById = asyncHandler(async (req, res) => {
   res.json({ deliveryNote: note });
 });
 
-// DELETE /api/deliverynote/:id
-// Un albarán firmado no se puede borrar
 export const remove = asyncHandler(async (req, res) => {
   const note = await DeliveryNote.findOne({
     _id:     req.params.id,
@@ -108,8 +101,6 @@ export const remove = asyncHandler(async (req, res) => {
   res.json({ message: 'Albarán eliminado correctamente' });
 });
 
-// PATCH /api/deliverynote/:id/sign
-// Recibe la imagen de firma como multipart/form-data (campo: signature)
 export const sign = asyncHandler(async (req, res) => {
   const note = await DeliveryNote.findOne({
     _id:     req.params.id,
@@ -123,18 +114,13 @@ export const sign = asyncHandler(async (req, res) => {
   if (note.signed) throw AppError.conflict('El albarán ya está firmado');
   if (!req.file)   throw AppError.validation('Se requiere la imagen de firma');
 
-  // 1. El buffer de la firma viene directamente de Multer (memoryStorage)
   const signatureBuffer = req.file.buffer;
 
-  // 2. Subir la imagen de firma a Cloudinary (optimizada con Sharp)
   const signatureUrl = await uploadImage(signatureBuffer, 'signatures', `note_${note._id}`);
 
-  // 3. Generar PDF con la firma embebida (doc.image(buffer)) y subirlo a Cloudinary
-  //    No necesitamos la URL de la firma para el PDF — usamos el buffer directamente
   const pdfBuffer = await generateDeliveryNotePdf(note, signatureBuffer);
   const pdfUrl    = await uploadPdf(pdfBuffer, 'deliverynotes', `note_${note._id}`);
 
-  // 4. Persistir estado firmado
   note.signed       = true;
   note.signatureUrl = signatureUrl;
   note.pdfUrl       = pdfUrl;
@@ -144,8 +130,6 @@ export const sign = asyncHandler(async (req, res) => {
   res.json({ deliveryNote: note, signatureUrl, pdfUrl });
 });
 
-// GET /api/deliverynote/pdf/:id
-// Redirige a la URL del PDF almacenado en Cloudinary, o lo regenera si no existe
 export const downloadPdf = asyncHandler(async (req, res) => {
   const note = await DeliveryNote.findOne({
     _id:     req.params.id,
@@ -157,13 +141,10 @@ export const downloadPdf = asyncHandler(async (req, res) => {
 
   if (!note) throw AppError.notFound('Albarán no encontrado');
 
-  // Si ya hay PDF firmado guardado en Cloudinary, redirigir
   if (note.pdfUrl) {
     return res.redirect(note.pdfUrl);
   }
 
-  // Albarán sin firmar → generar PDF al vuelo con streaming directo
-  // doc.pipe(res) — sin acumular buffer en memoria
   res.setHeader('Content-Type',        'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="albaran-${note._id}.pdf"`);
   pipeDeliveryNotePdf(note, res);

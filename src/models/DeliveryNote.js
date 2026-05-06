@@ -43,14 +43,11 @@ const deliveryNoteSchema = new mongoose.Schema(
       required: [true, 'La fecha de trabajo es obligatoria'],
       index:    true,
     },
-    // Campos para format = 'material'
     material: { type: String, trim: true },
     quantity: { type: Number, min: 0 },
     unit:     { type: String, trim: true },
-    // Campos para format = 'hours'
     hours:   { type: Number, min: 0 },
     workers: { type: [workerSchema], default: [] },
-    // Firma
     signed:       { type: Boolean, default: false },
     signedAt:     { type: Date },
     signatureUrl: { type: String },
@@ -60,7 +57,6 @@ const deliveryNoteSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Soft delete: excluye documentos con deleted=true de todas las queries
 const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });

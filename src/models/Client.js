@@ -38,11 +38,8 @@ const clientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Índice compuesto único: no puede haber dos clientes con el mismo CIF dentro de una compañía
 clientSchema.index({ company: 1, cif: 1 }, { unique: true });
 
-// Soft delete: excluye documentos con deleted=true de todas las queries
-// (find, findOne, countDocuments, findOneAndUpdate, etc.)
 const excludeDeleted = function (next) {
   if (!this.getOptions().includeDeleted) {
     this.where({ deleted: false });

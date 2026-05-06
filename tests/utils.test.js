@@ -1,17 +1,6 @@
-/**
- * Tests de utilidades, middleware y servicios sin HTTP.
- * Cubre ramas no alcanzadas por los tests de integración:
- *   - AppError — todos los statics + validation(array)
- *   - error-handler — errores 5XX y errores no operacionales
- *   - pdf.service — formato material y albarán firmado sin buffer
- *   - mail.service — rutas de retorno temprano cuando SMTP no configurado
- *   - middleware/upload — handleMulterError con distintos códigos Multer
- */
-
 import { jest } from '@jest/globals';
 import { PassThrough } from 'stream';
 
-// ── Mocks previos a importaciones estáticas ───────────────────────────────────
 jest.unstable_mockModule('../src/services/logger.service.js', () => ({
   notifySlack: jest.fn().mockResolvedValue(undefined),
 }));
@@ -39,9 +28,6 @@ beforeAll(async () => {
   ({ handleMulterError }                 = await import('../src/middleware/upload.js'));
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AppError
-// ─────────────────────────────────────────────────────────────────────────────
 describe('AppError — métodos estáticos', () => {
   it('notFound devuelve 404 con mensaje por defecto', () => {
     const e = AppError.notFound();
@@ -110,9 +96,6 @@ describe('AppError — métodos estáticos', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// errorHandler middleware
-// ─────────────────────────────────────────────────────────────────────────────
 describe('errorHandler middleware', () => {
   const makeRes = () => {
     const res = { status: jest.fn(), json: jest.fn() };
@@ -132,7 +115,7 @@ describe('errorHandler middleware', () => {
   });
 
   it('oculta el mensaje en errores no operacionales (500)', () => {
-    const err = new Error('Error inesperado de la BD');  // no operacional
+    const err = new Error('Error inesperado de la BD');
     const res = makeRes();
     errorHandler(err, makeReq(), res, () => {});
     expect(res.status).toHaveBeenCalledWith(500);
@@ -158,16 +141,12 @@ describe('errorHandler middleware', () => {
     const err = AppError.internal('Error de servidor');
     const res = makeRes();
     errorHandler(err, makeReq(), res, () => {});
-    await new Promise(r => setTimeout(r, 10)); // espera la Promise de notifySlack
+    await new Promise(r => setTimeout(r, 10));
     expect(notifySlack).toHaveBeenCalledTimes(1);
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// pdf.service — ramas no cubiertas
-// ─────────────────────────────────────────────────────────────────────────────
 describe('pdf.service — generateDeliveryNotePdf', () => {
-  // Nota mínima suficiente para generar el PDF
   const baseNote = {
     _id:         'abc123',
     workDate:    new Date(),
@@ -220,9 +199,6 @@ describe('pdf.service — generateDeliveryNotePdf', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// mail.service — retorno temprano cuando SMTP no configurado
-// ─────────────────────────────────────────────────────────────────────────────
 describe('mail.service — SMTP no configurado (entorno dev/test)', () => {
   it('sendVerificationEmail no lanza aunque SMTP no esté configurado', async () => {
     await expect(
@@ -237,9 +213,6 @@ describe('mail.service — SMTP no configurado (entorno dev/test)', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// handleMulterError — ramas de códigos Multer
-// ─────────────────────────────────────────────────────────────────────────────
 describe('handleMulterError middleware', () => {
   let multer;
 

@@ -3,14 +3,8 @@ import config from '../config/index.js';
 import logger from '../utils/logger.js';
 import { AppError } from '../utils/AppError.js';
 
-/**
- * Indica si el transporte SMTP está configurado con las credenciales necesarias.
- * Sin ellas el servidor arranca igualmente; en dev/test los códigos se loguean
- * por consola en lugar de enviarse por email.
- */
 const smtpConfigured = !!(config.SMTP_HOST && config.SMTP_USER && config.SMTP_PASS);
 
-// Transporte singleton — se crea solo si las credenciales están disponibles
 const transporter = smtpConfigured
   ? nodemailer.createTransport({
       host:   config.SMTP_HOST,
@@ -23,10 +17,6 @@ const transporter = smtpConfigured
     })
   : null;
 
-/**
- * Lanza AppError 503 en producción o loguea el aviso en dev/test.
- * Devuelve true si se debe abortar el envío (SMTP no configurado).
- */
 const checkSmtp = (to, code, type) => {
   if (smtpConfigured) return false;
   if (config.NODE_ENV === 'production') {
@@ -36,14 +26,9 @@ const checkSmtp = (to, code, type) => {
     { to, code, type },
     '[MAIL] SMTP no configurado — el email no se ha enviado (solo dev/test)'
   );
-  return true; // abortar silenciosamente
+  return true;
 };
 
-/**
- * Envía el código de verificación de email al usuario recién registrado.
- * @param {string} to    - Email destinatario
- * @param {string} code  - Código de 6 dígitos
- */
 export const sendVerificationEmail = async (to, code) => {
   if (checkSmtp(to, code, 'verification')) return;
 
@@ -74,11 +59,6 @@ export const sendVerificationEmail = async (to, code) => {
   });
 };
 
-/**
- * Envía un email de restablecimiento de contraseña.
- * @param {string} to    - Email destinatario
- * @param {string} code  - Código de 6 dígitos
- */
 export const sendPasswordResetEmail = async (to, code) => {
   if (checkSmtp(to, code, 'password-reset')) return;
 

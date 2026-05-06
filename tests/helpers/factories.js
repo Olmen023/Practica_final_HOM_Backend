@@ -1,6 +1,3 @@
-/**
- * Factories para crear documentos de prueba en la BD en-memoria.
- */
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import User         from '../../src/models/User.js';
@@ -14,7 +11,6 @@ export const RAW_PASSWORD = 'Test1234!';
 let _counter = 0;
 const uid = () => ++_counter;
 
-/** Crea un User + Company y asocia el user a la company. */
 export const createUserWithCompany = async (overrides = {}) => {
   const n      = uid();
   const hashed = await bcrypt.hash(RAW_PASSWORD, 10);
@@ -33,14 +29,12 @@ export const createUserWithCompany = async (overrides = {}) => {
     isFreelance: overrides.isFreelance ?? false,
   });
 
-  // Asociar company al user
   await User.findByIdAndUpdate(user._id, { company: company._id });
   const updatedUser = await User.findById(user._id);
 
   return { user: updatedUser, company };
 };
 
-/** Crea un Client asociado a la compañía dada. */
 export const createClient = async (companyId, userId, overrides = {}) => {
   const n = uid();
   return Client.create({
@@ -54,7 +48,6 @@ export const createClient = async (companyId, userId, overrides = {}) => {
   });
 };
 
-/** Crea un Project asociado al client y company dados. */
 export const createProject = async (companyId, userId, clientId, overrides = {}) => {
   const n = uid();
   return Project.create({
@@ -67,7 +60,6 @@ export const createProject = async (companyId, userId, clientId, overrides = {})
   });
 };
 
-/** Crea un DeliveryNote (albarán) con formato 'hours' por defecto. */
 export const createDeliveryNote = async (companyId, userId, clientId, projectId, overrides = {}) => {
   return DeliveryNote.create({
     user:        userId,
@@ -83,5 +75,4 @@ export const createDeliveryNote = async (companyId, userId, clientId, projectId,
   });
 };
 
-/** Genera un ObjectId de mongoose válido (para IDs inexistentes en tests). */
 export const fakeId = () => new mongoose.Types.ObjectId().toString();

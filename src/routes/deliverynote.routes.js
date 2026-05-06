@@ -122,8 +122,6 @@ router.use(verifyJwt);
 router.post('/',     validate(createDeliveryNoteSchema), create);
 router.get('/',      validate(deliverynoteListSchema, 'query'), list);
 
-// OJO: /pdf/:id debe declararse ANTES de /:id para que Express no lo interprete
-// como un documento con id='pdf'
 router.get('/pdf/:id',    downloadPdf);
 router.get('/:id',        getById);
 router.delete('/:id',     remove);

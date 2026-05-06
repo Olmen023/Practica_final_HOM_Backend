@@ -11,13 +11,12 @@ import { swaggerSpec } from './config/swagger.js';
 
 const app = express();
 
-// ── Seguridad ─────────────────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:    ["'self'"],
       scriptSrc:     ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-      scriptSrcAttr: ["'unsafe-inline'"],          // permite onclick/onsubmit en la UI de prueba
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc:      ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
       imgSrc:        ["'self'", 'data:', 'https:'],
       connectSrc:    ["'self'"],
@@ -28,10 +27,8 @@ app.use(helmet({
       formAction:    ["'self'"],
     },
   },
-}));                                // cabeceras HTTP seguras
-app.use(cors({ origin: true }));    // CORS — permitir cualquier origen (restringir en producción)
-// Express 5: req.query es un getter sin setter — lo convertimos en objeto
-// plano escribible para que express-mongo-sanitize pueda sanitizarlo
+}));
+app.use(cors({ origin: true }));
 app.use((req, _res, next) => {
   Object.defineProperty(req, 'query', {
     value:        { ...req.query },
@@ -41,26 +38,21 @@ app.use((req, _res, next) => {
   });
   next();
 });
-app.use(mongoSanitize());           // previene inyección NoSQL ($, .)
-app.use(hpp());                     // previene contaminación de parámetros HTTP
-app.use(globalLimiter);             // rate limit global (200 req / 15 min)
+app.use(mongoSanitize());
+app.use(hpp());
+app.use(globalLimiter);
 
-// ── Parsers ───────────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// ── Swagger UI ────────────────────────────────────────────────────────────────
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'BildyApp API Docs',
 }));
 
-// ── Interfaz de prueba (archivos estáticos) ───────────────────────────────────
 app.use(express.static('public'));
 
-// ── Rutas ─────────────────────────────────────────────────────────────────────
 app.use('/', router);
 
-// ── Manejo de errores ─────────────────────────────────────────────────────────
 app.use(notFound);
 app.use(errorHandler);
 

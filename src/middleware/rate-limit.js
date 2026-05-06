@@ -1,7 +1,7 @@
 import rateLimit from 'express-rate-limit';
 
 const defaults = {
-  standardHeaders: true, // devuelve cabeceras RateLimit-* estándar
+  standardHeaders: true,
   legacyHeaders:   false,
   handler: (_req, res) => {
     res.status(429).json({
@@ -11,14 +11,12 @@ const defaults = {
   },
 };
 
-/** Límite general para todas las rutas */
 export const globalLimiter = rateLimit({
   ...defaults,
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 1000,
   limit:    200,
 });
 
-/** Límite estricto para endpoints de autenticación (register, login) */
 export const authLimiter = rateLimit({
   ...defaults,
   windowMs: 15 * 60 * 1000,
@@ -26,9 +24,8 @@ export const authLimiter = rateLimit({
   message:  'Demasiados intentos de autenticación, inténtalo en 15 minutos.',
 });
 
-/** Límite para operaciones de escritura en la API */
 export const writeLimiter = rateLimit({
   ...defaults,
-  windowMs: 10 * 60 * 1000, // 10 minutos
+  windowMs: 10 * 60 * 1000,
   limit:    100,
 });
