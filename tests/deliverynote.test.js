@@ -158,7 +158,7 @@ describe('DELETE /api/deliverynote/:id', () => {
 });
 
 describe('PATCH /api/deliverynote/:id/sign', () => {
-  it('firma un albarán con imagen PNG válida (200)', async () => {
+  it('devuelve 200 con signatureUrl y pdfUrl cuando la firma se sube correctamente', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
 
     const res = await request(app)
@@ -172,7 +172,7 @@ describe('PATCH /api/deliverynote/:id/sign', () => {
     expect(res.body.pdfUrl).toBeDefined();
   });
 
-  it('rechaza firmar un albarán ya firmado (409)', async () => {
+  it('devuelve 409 si el albarán ya estaba firmado antes de la petición', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id, {
       signed: true,
     });
@@ -183,20 +183,41 @@ describe('PATCH /api/deliverynote/:id/sign', () => {
       .attach('signature', SIGNATURE_PNG, { filename: 'firma.png', contentType: 'image/png' });
 
     expect(res.status).toBe(409);
+    expect(res.body.message).toMatch(/firmado/i);
   });
 
-  it('rechaza archivo con mimetype no permitido (400)', async () => {
+  it('devuelve 400 si no se adjunta ningún fichero de firma en la petición', async () => {
     const note = await createDeliveryNote(company._id, user._id, client._id, project._id);
 
     const res = await request(app)
       .patch(`/api/deliverynote/${note._id}/sign`)
-      .set('Authorization', token)
-      .attach('signature', Buffer.from('%PDF-1.4 fake'), {
-        filename:    'doc.pdf',
-        contentType: 'application/pdf',
-      });
+      .set('Authorization', token);
 
     expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/firma/i);
+  });
+
+  it('devuelve 404 si el identificador del albarán no existe en la base de datos', async () => {
+    const res = await request(app)
+      .patch(`/api/deliverynote/${fakeId()}/sign`)
+      .set('Authorization', token)
+      .attach('signature', SIGNATURE_PNG, { filename: 'firma.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('devuelve 404 si el albarán pertenece a una compañía distinta a la del usuario autenticado', async () => {
+    const { user: otherUser, company: otherCompany } = await createUserWithCompany();
+    const otherClient  = await createClient(otherCompany._id, otherUser._id);
+    const otherProject = await createProject(otherCompany._id, otherUser._id, otherClient._id);
+    const otherNote    = await createDeliveryNote(otherCompany._id, otherUser._id, otherClient._id, otherProject._id);
+
+    const res = await request(app)
+      .patch(`/api/deliverynote/${otherNote._id}/sign`)
+      .set('Authorization', token)
+      .attach('signature', SIGNATURE_PNG, { filename: 'firma.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(404);
   });
 });
 
