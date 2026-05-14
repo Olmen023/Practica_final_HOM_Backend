@@ -38,6 +38,4 @@ Devolver 404 cuando el recurso existe pero pertenece a otro tenant es la prácti
 
 ## Proceso
 Tiempo total invertido: 1.5 horas
-Herramientas usadas: Claude Code (claude.ai), VS Code
-Prompts a IA (si aplica, copia literal):
-- "Crea una rama examen, haz lo siguiente que se pide, tienes que contestar a unas preguntas y hacer lo que dice: Reto F12..."
+Herramientas usadas: VScode
